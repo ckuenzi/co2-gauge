@@ -1,0 +1,57 @@
+esphome:
+  name: co2_gauge
+  friendly_name: "CO2 Gauge"
+
+esp32:
+  board: lolin_s2_mini
+  variant: ESP32S2
+  framework:
+    type: arduino
+    version: 2.0.3
+    platform_version: 5.0.0
+
+logger:
+
+api:
+  encryption:
+    key: "yourkey"
+
+ota:
+
+wifi:
+  ssid: 'yourssid'
+  password: 'yourpassword'
+
+  ap:
+    ssid: "Fallback ESPHome"
+    password: "yourfallbackpassword"
+
+captive_portal:
+    
+servo:
+  - id: pointer
+    output: pwm_output
+    transition_length: 10s # make pointer nove slowly to reduce noise
+    auto_detach_time: 3s 
+    min_level: 2.8% # calibrate to move in a 180° arc
+    max_level: 12.7% # calibrate to move in a 180° arc
+    
+output:
+  - platform: ledc
+    id: pwm_output
+    pin: GPIO16 # conveniently located next to 5V and GND on board
+    frequency: 50Hz
+
+number:
+  - platform: template
+    name: Servo Control
+    min_value: 0
+    initial_value: 50
+    max_value: 100
+    step: 0.1
+    optimistic: true
+    set_action:
+      then:
+        - servo.write:
+            id: pointer
+            level: !lambda 'return (x*2-100) / -100.0;' # map incoming value of 0-100 to servo position
